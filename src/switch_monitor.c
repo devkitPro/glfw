@@ -26,6 +26,7 @@
 //========================================================================
 
 #include "internal.h"
+#include <stdlib.h>
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -53,15 +54,30 @@ void _glfwPlatformGetMonitorWorkarea(_GLFWmonitor* monitor,
                                      int* xpos, int* ypos,
                                      int* width, int* height)
 {
+    GLFWvidmode mode;
+    _glfwPlatformGetVideoMode(monitor, &mode);
+    if (width)
+        *width = mode.width;
+    if (height)
+        *height = mode.height;
 }
 
 GLFWvidmode* _glfwPlatformGetVideoModes(_GLFWmonitor* monitor, int* found)
 {
-    return NULL;
+    GLFWvidmode* modes = calloc(1, sizeof(GLFWvidmode));
+    _glfwPlatformGetVideoMode(monitor, modes);
+    *found = 1;
+    return modes;
 }
 
 void _glfwPlatformGetVideoMode(_GLFWmonitor* monitor, GLFWvidmode* mode)
 {
+    mode->width = _glfw.nx.scr_width;
+    mode->height = _glfw.nx.scr_height;
+    mode->redBits = 8;
+    mode->greenBits = 8;
+    mode->blueBits = 8;
+    mode->refreshRate = 60;
 }
 
 GLFWbool _glfwPlatformGetGammaRamp(_GLFWmonitor* monitor, GLFWgammaramp* ramp)

@@ -28,6 +28,50 @@
 #include "internal.h"
 
 
+static AppletHookCookie s_glfwAppletHookCookie;
+
+static void _glfwSwitchRefreshFocusState(void)
+{
+    int is_focused = appletGetFocusState() == AppletFocusState_Focused ? GLFW_TRUE : GLFW_FALSE;
+    if (is_focused != _glfw.nx.is_focused)
+    {
+        _glfw.nx.event_mask |= _GLFW_SWITCH_EVENT_FOCUS_CHANGED;
+        _glfw.nx.is_focused = is_focused;
+    }
+}
+
+static void _glfwSwitchRefreshScreenSize(void)
+{
+    _glfw.nx.event_mask |= _GLFW_SWITCH_EVENT_SCREEN_SIZE_CHANGED;
+    switch (appletGetOperationMode())
+    {
+        default:
+        case AppletOperationMode_Handheld:
+            _glfw.nx.scr_width = 1280;
+            _glfw.nx.scr_height = 720;
+            break;
+        case AppletOperationMode_Docked:
+            _glfw.nx.scr_width = 1920;
+            _glfw.nx.scr_height = 1080;
+            break;
+    }
+}
+
+static void _glfwSwitchAppletHook(AppletHookType hook, void* param)
+{
+    switch (hook)
+    {
+        default:
+            break;
+        case AppletHookType_OnFocusState:
+            _glfwSwitchRefreshFocusState();
+            break;
+        case AppletHookType_OnOperationMode:
+            _glfwSwitchRefreshScreenSize();
+            break;
+    }
+}
+
 __attribute__ ((weak))
 void _glfwPlatformTerminateContextApi(void)
 {
@@ -40,13 +84,22 @@ void _glfwPlatformTerminateContextApi(void)
 
 int _glfwPlatformInit(void)
 {
+    appletLockExit();
+    appletSetFocusHandlingMode(AppletFocusHandlingMode_NoSuspend);
+    appletHook(&s_glfwAppletHookCookie, _glfwSwitchAppletHook, NULL);
+    _glfwSwitchRefreshFocusState();
+    _glfwSwitchRefreshScreenSize();
+
     _glfwInitTimerPOSIX();
+    _glfwAllocMonitor("Default", 1920, 1080);
     return GLFW_TRUE;
 }
 
 void _glfwPlatformTerminate(void)
 {
     _glfwPlatformTerminateContextApi();
+    appletUnhook(&s_glfwAppletHookCookie);
+    appletUnlockExit();
 }
 
 const char* _glfwPlatformGetVersionString(void)

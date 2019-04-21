@@ -28,13 +28,40 @@
 #include "internal.h"
 
 
+#define FB_WIDTH  1920
+#define FB_HEIGHT 1080
+
+
+static int resizeNativeWindow(_GLFWwindow* window, int width, int height)
+{
+    if (width > FB_WIDTH)
+    {
+        _glfwInputError(GLFW_INVALID_VALUE, "Invalid width (%d > %d)", width, FB_WIDTH);
+        return GLFW_FALSE;
+    }
+    if (height > FB_HEIGHT)
+    {
+        _glfwInputError(GLFW_INVALID_VALUE, "Invalid height (%d > %d)", height, FB_HEIGHT);
+        return GLFW_FALSE;
+    }
+
+    nwindowSetCrop(window->nx.nwin, 0, FB_HEIGHT-height, width, FB_HEIGHT);
+    window->nx.width = width;
+    window->nx.height = height;
+
+    _glfwInputFramebufferSize(window, width, height);
+    _glfwInputWindowSize(window, width, height);
+    _glfwInputWindowDamage(window);
+
+    return GLFW_TRUE;
+}
+
 static int createNativeWindow(_GLFWwindow* window,
                               const _GLFWwndconfig* wndconfig)
 {
     window->nx.nwin = nwindowGetDefault();
-    nwindowSetDimensions(window->nx.nwin, wndconfig->width, wndconfig->height);
-
-    return GLFW_TRUE;
+    nwindowSetDimensions(window->nx.nwin, FB_WIDTH, FB_HEIGHT);
+    return resizeNativeWindow(window, wndconfig->width, wndconfig->height);
 }
 
 __attribute__ ((weak))
@@ -118,13 +145,16 @@ void _glfwPlatformSetWindowPos(_GLFWwindow* window, int xpos, int ypos)
 
 void _glfwPlatformGetWindowSize(_GLFWwindow* window, int* width, int* height)
 {
-    // TODO: Support proper window size stuff
-    _glfwPlatformGetFramebufferSize(window, width, height);
+    if (width)
+        *width = window->nx.width;
+    if (height)
+        *height = window->nx.height;
 }
 
 void _glfwPlatformSetWindowSize(_GLFWwindow* window, int width, int height)
 {
-    _glfwInputError(GLFW_PLATFORM_ERROR, "Switch: SetWindowSize not supported");
+    if (window->resizable)
+        resizeNativeWindow(window, width, height);
 }
 
 void _glfwPlatformSetWindowSizeLimits(_GLFWwindow* window,
@@ -139,21 +169,15 @@ void _glfwPlatformSetWindowAspectRatio(_GLFWwindow* window, int n, int d)
 
 void _glfwPlatformGetFramebufferSize(_GLFWwindow* window, int* width, int* height)
 {
-    u32 win_width, win_height;
-    nwindowGetDimensions(window->nx.nwin, &win_width, &win_height);
-
-    if (width)
-        *width = win_width;
-    if (height)
-        *height = win_height;
+    // Applications rely on framebuffer size == window size; so let's do it that way.
+    _glfwPlatformGetWindowSize(window, width, height);
 }
 
 void _glfwPlatformGetWindowFrameSize(_GLFWwindow* window,
                                      int* left, int* top,
                                      int* right, int* bottom)
 {
-    // TODO: Support proper window size stuff
-    _glfwPlatformGetFramebufferSize(window, right, bottom);
+    _glfwPlatformGetWindowSize(window, right, bottom);
 }
 
 void _glfwPlatformGetWindowContentScale(_GLFWwindow* window,
@@ -179,12 +203,12 @@ void _glfwPlatformMaximizeWindow(_GLFWwindow* window)
 
 int _glfwPlatformWindowMaximized(_GLFWwindow* window)
 {
-    return GLFW_TRUE;
+    return GLFW_FALSE; // "Full screen windows cannot be maximized"
 }
 
 int _glfwPlatformWindowHovered(_GLFWwindow* window)
 {
-    return GLFW_TRUE;
+    return _glfw.nx.is_focused;
 }
 
 int _glfwPlatformFramebufferTransparent(_GLFWwindow* window)
@@ -244,17 +268,17 @@ void _glfwPlatformFocusWindow(_GLFWwindow* window)
 
 int _glfwPlatformWindowFocused(_GLFWwindow* window)
 {
-    return GLFW_TRUE;
+    return GLFW_TRUE; // We always have input focus
 }
 
 int _glfwPlatformWindowIconified(_GLFWwindow* window)
 {
-    return GLFW_FALSE;
+    return !_glfw.nx.is_focused;
 }
 
 int _glfwPlatformWindowVisible(_GLFWwindow* window)
 {
-    return GLFW_TRUE;
+    return _glfw.nx.is_focused;
 }
 
 void _glfwPlatformPollEvents(void)
@@ -265,16 +289,33 @@ void _glfwPlatformPollEvents(void)
     if (!_glfw.nx.cur_window)
         return;
 
-    res = appletGetMessage(&msg);
-    if (R_SUCCEEDED(res))
+    int events;
+    do
     {
-        bool should_close = appletProcessMessage(msg);
-        if (should_close)
+        res = appletGetMessage(&msg);
+        if (R_SUCCEEDED(res))
         {
-            _glfwInputWindowCloseRequest(_glfw.nx.cur_window);
-            return;
+            bool should_close = !appletProcessMessage(msg);
+            if (should_close)
+            {
+                _glfwInputWindowCloseRequest(_glfw.nx.cur_window);
+                return;
+            }
         }
-    }
+
+        events = _glfw.nx.event_mask;
+        _glfw.nx.event_mask = 0;
+        if (events & _GLFW_SWITCH_EVENT_FOCUS_CHANGED)
+        {
+            _glfwInputWindowIconify(_glfw.nx.cur_window, !_glfw.nx.is_focused);
+            if (_glfw.nx.is_focused)
+                appletSetFocusHandlingMode(AppletFocusHandlingMode_NoSuspend);
+            else
+                appletSetFocusHandlingMode(AppletFocusHandlingMode_SuspendHomeSleepNotify);
+        }
+        if (events & _GLFW_SWITCH_EVENT_SCREEN_SIZE_CHANGED)
+            _glfwPlatformSetWindowSize(_glfw.nx.cur_window, _glfw.nx.scr_width, _glfw.nx.scr_height);
+    } while (events);
 }
 
 void _glfwPlatformWaitEvents(void)

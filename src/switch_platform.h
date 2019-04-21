@@ -60,12 +60,16 @@
 #include "posix_thread.h"
 #include "switch_joystick.h"
 
+#define _GLFW_SWITCH_EVENT_FOCUS_CHANGED       0x01
+#define _GLFW_SWITCH_EVENT_SCREEN_SIZE_CHANGED 0x02
+
 // Switch-specific per-window data
 //
+
 typedef struct _GLFWwindowNX
 {
     NWindow* nwin;
-    // TODO: Add fake width/height support
+    int width, height;
 } _GLFWwindowNX;
 
 // Switch-specific global data
@@ -73,6 +77,9 @@ typedef struct _GLFWwindowNX
 typedef struct _GLFWlibraryNX
 {
     _GLFWwindow* cur_window;
+    int event_mask;
+    int is_focused;
+    int scr_width, scr_height;
 } _GLFWlibraryNX;
 
 // Switch-specific context management functions
