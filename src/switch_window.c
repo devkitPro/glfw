@@ -37,6 +37,15 @@ static int createNativeWindow(_GLFWwindow* window,
     return GLFW_TRUE;
 }
 
+__attribute__ ((weak))
+int _glfwPlatformCreateContext(_GLFWwindow* window,
+                                      const _GLFWctxconfig* ctxconfig,
+                                      const _GLFWfbconfig* fbconfig)
+{
+    _glfwInputError(GLFW_API_UNAVAILABLE, "Switch: EGL library not loaded");
+    return GLFW_FALSE;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW platform API                      //////
@@ -61,9 +70,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API ||
             ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
-            if (!_glfwInitEGL())
-                return GLFW_FALSE;
-            if (!_glfwCreateContextEGL(window, ctxconfig, fbconfig))
+            if (!_glfwPlatformCreateContext(window, ctxconfig, fbconfig))
                 return GLFW_FALSE;
         }
         else

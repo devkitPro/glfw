@@ -399,6 +399,9 @@ GLFWbool _glfwInitEGL(void)
         _glfwTerminateEGL();
         return GLFW_FALSE;
     }
+#else
+    if (_glfw.egl.display)
+        return GLFW_TRUE;
 #endif
 
     _glfw.egl.display = eglGetDisplay(_GLFW_EGL_NATIVE_DISPLAY);

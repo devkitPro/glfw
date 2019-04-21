@@ -64,7 +64,7 @@ elseif (_GLFW_SWITCH)
     set(glfw_HEADERS ${common_HEADERS} switch_platform.h switch_joystick.h
                      posix_time.h posix_thread.h egl_context.h)
     set(glfw_SOURCES ${common_SOURCES} switch_init.c switch_monitor.c switch_window.c
-                     switch_joystick.c posix_time.c posix_thread.c egl_context.c)
+                     switch_joystick.c switch_context.c posix_time.c posix_thread.c egl_context.c)
 endif()
 
 if (_GLFW_X11 OR _GLFW_WAYLAND)

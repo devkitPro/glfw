@@ -27,6 +27,19 @@
 
 #include <switch.h>
 
+// Internally rename GLFW OpenGL context management functions
+// This is necessary in order to avoid a linker dependency to EGL/mesa when
+// GLFW's OpenGL context management functions aren't called by user code
+//
+#if !defined(_GLFW_SWITCH_NO_CONTEXT_WRAPPER)
+#define glfwMakeContextCurrent _glfwMakeContextCurrentImpl
+#define glfwGetCurrentContext _glfwGetCurrentContextImpl
+#define glfwSwapBuffers _glfwSwapBuffersImpl
+#define glfwSwapInterval _glfwSwapIntervalImpl
+#define glfwExtensionSupported _glfwExtensionSupportedImpl
+#define glfwGetProcAddress _glfwGetProcAddressImpl
+#endif
+
 #define _GLFW_EGL_NATIVE_WINDOW  ((EGLNativeWindowType) window->nx.nwin)
 #define _GLFW_EGL_NATIVE_DISPLAY EGL_DEFAULT_DISPLAY
 
@@ -61,4 +74,20 @@ typedef struct _GLFWlibraryNX
 {
     _GLFWwindow* cur_window;
 } _GLFWlibraryNX;
+
+// Switch-specific context management functions
+//
+int _glfwPlatformCreateContext(_GLFWwindow* window,
+                                   const _GLFWctxconfig* ctxconfig,
+                                   const _GLFWfbconfig* fbconfig);
+void _glfwPlatformTerminateContextApi(void);
+
+// Wrapped names of GLFW context management functions
+//
+GLFWAPI void _glfwMakeContextCurrentImpl(GLFWwindow* handle);
+GLFWAPI GLFWwindow* _glfwGetCurrentContextImpl(void);
+GLFWAPI void _glfwSwapBuffersImpl(GLFWwindow* handle);
+GLFWAPI void _glfwSwapIntervalImpl(int interval);
+GLFWAPI int _glfwExtensionSupportedImpl(const char* extension);
+GLFWAPI GLFWglproc _glfwGetProcAddressImpl(const char* procname);
 

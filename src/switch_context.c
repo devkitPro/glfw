@@ -2,7 +2,7 @@
 // GLFW 3.3 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2016 Google Inc.
-// Copyright (c) 2016-2017 Camilla Löwy <elmindreda@glfw.org>
+// Copyright (c) 2016-2019 Camilla Löwy <elmindreda@glfw.org>
 //
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
@@ -25,32 +25,53 @@
 //
 //========================================================================
 
+#define _GLFW_SWITCH_NO_CONTEXT_WRAPPER
 #include "internal.h"
 
 
-__attribute__ ((weak))
-void _glfwPlatformTerminateContextApi(void)
+int _glfwPlatformCreateContext(_GLFWwindow* window,
+                                   const _GLFWctxconfig* ctxconfig,
+                                   const _GLFWfbconfig* fbconfig)
 {
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-//////                       GLFW platform API                      //////
-//////////////////////////////////////////////////////////////////////////
-
-int _glfwPlatformInit(void)
-{
-    _glfwInitTimerPOSIX();
+    if (!_glfwInitEGL())
+        return GLFW_FALSE;
+    if (!_glfwCreateContextEGL(window, ctxconfig, fbconfig))
+        return GLFW_FALSE;
     return GLFW_TRUE;
 }
 
-void _glfwPlatformTerminate(void)
+void _glfwPlatformTerminateContextApi(void)
 {
-    _glfwPlatformTerminateContextApi();
+    _glfwTerminateEGL();
 }
 
-const char* _glfwPlatformGetVersionString(void)
+GLFWAPI void glfwMakeContextCurrent(GLFWwindow* handle)
 {
-    return _GLFW_VERSION_NUMBER " Switch EGL";
+    _glfwMakeContextCurrentImpl(handle);
+}
+
+GLFWAPI GLFWwindow* glfwGetCurrentContext(void)
+{
+    return _glfwGetCurrentContextImpl();
+}
+
+GLFWAPI void glfwSwapBuffers(GLFWwindow* handle)
+{
+    _glfwSwapBuffersImpl(handle);
+}
+
+GLFWAPI void glfwSwapInterval(int interval)
+{
+    _glfwSwapIntervalImpl(interval);
+}
+
+GLFWAPI int glfwExtensionSupported(const char* extension)
+{
+    return _glfwExtensionSupportedImpl(extension);
+}
+
+GLFWAPI GLFWglproc glfwGetProcAddress(const char* procname)
+{
+    return _glfwGetProcAddressImpl(procname);
 }
 
