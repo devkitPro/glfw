@@ -44,11 +44,15 @@
 #cmakedefine _GLFW_WAYLAND
 // Define this to 1 if building GLFW for OSMesa
 #cmakedefine _GLFW_OSMESA
+// Define this to 1 if building GLFW for Switch
+#cmakedefine _GLFW_SWITCH
 
 // Define this to 1 if building as a shared library / dynamic library / DLL
 #cmakedefine _GLFW_BUILD_DLL
 // Define this to 1 to use Vulkan loader linked statically into application
 #cmakedefine _GLFW_VULKAN_STATIC
+// Define this to 1 to use EGL linked statically into application
+#cmakedefine _GLFW_EGL_STATIC
 
 // Define this to 1 to force use of high-performance GPU on hybrid systems
 #cmakedefine _GLFW_USE_HYBRID_HPG

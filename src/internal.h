@@ -190,6 +190,8 @@ typedef void (APIENTRY * PFN_vkVoidFunction)(void);
  #include "wl_platform.h"
 #elif defined(_GLFW_OSMESA)
  #include "null_platform.h"
+#elif defined(_GLFW_SWITCH)
+ #include "switch_platform.h"
 #else
  #error "No supported window creation API selected"
 #endif
@@ -563,6 +565,8 @@ struct _GLFWlibrary
         GLFWbool        KHR_xcb_surface;
 #elif defined(_GLFW_WAYLAND)
         GLFWbool        KHR_wayland_surface;
+#elif defined(_GLFW_SWITCH)
+        GLFWbool        NN_vi_surface;
 #endif
     } vk;
 

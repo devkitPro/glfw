@@ -20,6 +20,7 @@ option(GLFW_BUILD_TESTS "Build the GLFW test programs" ON)
 option(GLFW_BUILD_DOCS "Build the GLFW documentation" ON)
 option(GLFW_INSTALL "Generate installation target" ON)
 option(GLFW_VULKAN_STATIC "Assume the Vulkan loader is linked with the application" OFF)
+option(GLFW_EGL_STATIC "Statically link to EGL" OFF)
 
 include(GNUInstallDirs)
 include(CMakeDependentOption)
@@ -51,6 +52,13 @@ if (GLFW_VULKAN_STATIC)
         message(FATAL_ERROR "You are trying to link the Vulkan loader static library into the GLFW shared library")
     endif()
     set(_GLFW_VULKAN_STATIC 1)
+endif()
+
+if (GLFW_EGL_STATIC)
+    if (BUILD_SHARED_LIBS)
+        message(FATAL_ERROR "You are trying to link the EGL static library into the GLFW shared library")
+    endif()
+    set(_GLFW_EGL_STATIC 1)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${GLFW_SOURCE_DIR}/CMake/modules")
@@ -148,6 +156,9 @@ elseif (APPLE)
 elseif (UNIX)
     set(_GLFW_X11 1)
     message(STATUS "Using X11 for window creation")
+elseif (SWITCH_LIBNX)
+    set(_GLFW_SWITCH 1)
+    message(STATUS "Using Switch for window creation")
 else()
     message(FATAL_ERROR "No supported platform was detected")
 endif()
@@ -173,6 +184,15 @@ if (UNIX AND NOT APPLE)
     if (CMAKE_DL_LIBS)
         list(APPEND glfw_LIBRARIES "${CMAKE_DL_LIBS}")
         list(APPEND glfw_PKG_LIBS "-l${CMAKE_DL_LIBS}")
+    endif()
+endif()
+
+if (SWITCH_LIBNX)
+    find_library(MATH_LIBRARY m)
+    mark_as_advanced(MATH_LIBRARY)
+    if (MATH_LIBRARY)
+        list(APPEND glfw_LIBRARIES "${MATH_LIBRARY}")
+        list(APPEND glfw_PKG_LIBS "-lm")
     endif()
 endif()
 
@@ -289,10 +309,26 @@ if (_GLFW_COCOA)
 endif()
 
 #--------------------------------------------------------------------
+# Use Switch for window creation
+#--------------------------------------------------------------------
+if (_GLFW_SWITCH)
+
+    list(APPEND glfw_PKG_LIBS "-lnx")
+
+endif()
+
+#--------------------------------------------------------------------
 # Add the Vulkan loader as a dependency if necessary
 #--------------------------------------------------------------------
-if (GLFW_VULKAN_STATIC)
+if (GLFW_VULKAN_STATIC AND NOT SWITCH_LIBNX)
     list(APPEND glfw_PKG_DEPS "vulkan")
+endif()
+
+#--------------------------------------------------------------------
+# Add EGL as a dependency if necessary
+#--------------------------------------------------------------------
+if (GLFW_EGL_STATIC)
+    list(APPEND glfw_PKG_DEPS "egl")
 endif()
 
 #--------------------------------------------------------------------

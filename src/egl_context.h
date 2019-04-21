@@ -43,6 +43,10 @@ typedef Window EGLNativeWindowType;
  #define EGLAPIENTRY
 typedef struct wl_display* EGLNativeDisplayType;
 typedef struct wl_egl_window* EGLNativeWindowType;
+#elif defined(_GLFW_SWITCH)
+ #define EGLAPIENTRY
+typedef void* EGLNativeDisplayType;
+typedef void* EGLNativeWindowType;
 #else
  #error "No supported EGL platform selected"
 #endif
@@ -115,6 +119,24 @@ typedef void* EGLContext;
 typedef void* EGLDisplay;
 typedef void* EGLSurface;
 
+#if defined(_GLFW_EGL_STATIC)
+EGLBoolean EGLAPIENTRY eglGetConfigAttrib(EGLDisplay,EGLConfig,EGLint,EGLint*);
+EGLBoolean EGLAPIENTRY eglGetConfigs(EGLDisplay,EGLConfig*,EGLint,EGLint*);
+EGLDisplay EGLAPIENTRY eglGetDisplay(EGLNativeDisplayType);
+EGLint EGLAPIENTRY eglGetError(void);
+EGLBoolean EGLAPIENTRY eglInitialize(EGLDisplay,EGLint*,EGLint*);
+EGLBoolean EGLAPIENTRY eglTerminate(EGLDisplay);
+EGLBoolean EGLAPIENTRY eglBindAPI(EGLenum);
+EGLContext EGLAPIENTRY eglCreateContext(EGLDisplay,EGLConfig,EGLContext,const EGLint*);
+EGLBoolean EGLAPIENTRY eglDestroySurface(EGLDisplay,EGLSurface);
+EGLBoolean EGLAPIENTRY eglDestroyContext(EGLDisplay,EGLContext);
+EGLSurface EGLAPIENTRY eglCreateWindowSurface(EGLDisplay,EGLConfig,EGLNativeWindowType,const EGLint*);
+EGLBoolean EGLAPIENTRY eglMakeCurrent(EGLDisplay,EGLSurface,EGLSurface,EGLContext);
+EGLBoolean EGLAPIENTRY eglSwapBuffers(EGLDisplay,EGLSurface);
+EGLBoolean EGLAPIENTRY eglSwapInterval(EGLDisplay,EGLint);
+const char* EGLAPIENTRY eglQueryString(EGLDisplay,EGLint);
+GLFWglproc EGLAPIENTRY eglGetProcAddress(const char*);
+#else
 // EGL function pointer typedefs
 typedef EGLBoolean (EGLAPIENTRY * PFN_eglGetConfigAttrib)(EGLDisplay,EGLConfig,EGLint,EGLint*);
 typedef EGLBoolean (EGLAPIENTRY * PFN_eglGetConfigs)(EGLDisplay,EGLConfig*,EGLint,EGLint*);
@@ -148,6 +170,7 @@ typedef GLFWglproc (EGLAPIENTRY * PFN_eglGetProcAddress)(const char*);
 #define eglSwapInterval _glfw.egl.SwapInterval
 #define eglQueryString _glfw.egl.QueryString
 #define eglGetProcAddress _glfw.egl.GetProcAddress
+#endif
 
 #define _GLFW_EGL_CONTEXT_STATE            _GLFWcontextEGL egl
 #define _GLFW_EGL_LIBRARY_CONTEXT_STATE    _GLFWlibraryEGL egl
@@ -161,7 +184,9 @@ typedef struct _GLFWcontextEGL
    EGLContext       handle;
    EGLSurface       surface;
 
+#if !defined(_GLFW_EGL_STATIC)
    void*            client;
+#endif
 
 } _GLFWcontextEGL;
 
@@ -179,6 +204,7 @@ typedef struct _GLFWlibraryEGL
     GLFWbool        KHR_get_all_proc_addresses;
     GLFWbool        KHR_context_flush_control;
 
+#if !defined(_GLFW_EGL_STATIC)
     void*           handle;
 
     PFN_eglGetConfigAttrib      GetConfigAttrib;
@@ -197,6 +223,7 @@ typedef struct _GLFWlibraryEGL
     PFN_eglSwapInterval         SwapInterval;
     PFN_eglQueryString          QueryString;
     PFN_eglGetProcAddress       GetProcAddress;
+#endif
 
 } _GLFWlibraryEGL;
 
