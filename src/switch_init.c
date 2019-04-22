@@ -90,7 +90,6 @@ int _glfwPlatformInit(void)
     _glfwSwitchRefreshFocusState();
     _glfwSwitchRefreshScreenSize();
 
-    _glfwInitTimerPOSIX();
     _glfwAllocMonitor("Default", 1920, 1080);
     return GLFW_TRUE;
 }

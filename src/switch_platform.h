@@ -52,11 +52,11 @@
 #define _GLFW_OSMESA_CONTEXT_STATE
 #define _GLFW_OSMESA_LIBRARY_CONTEXT_STATE
 
+#define _GLFW_PLATFORM_LIBRARY_TIMER_STATE
 #define _GLFW_PLATFORM_MONITOR_STATE
 #define _GLFW_PLATFORM_CURSOR_STATE
 
 #include "egl_context.h"
-#include "posix_time.h"
 #include "posix_thread.h"
 #include "switch_joystick.h"
 
