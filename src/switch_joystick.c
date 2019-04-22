@@ -165,10 +165,10 @@ int _glfwPlatformPollJoystick(_GLFWjoystick* js, int mode)
         JoystickPosition left, right;
         hidJoystickRead(&left,  js->nx.id, JOYSTICK_LEFT);
         hidJoystickRead(&right, js->nx.id, JOYSTICK_RIGHT);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_X,  left.dx  / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_Y,  left.dy  / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_X, right.dx / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_Y, right.dy / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_X,   left.dx  / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_Y,  -left.dy  / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_X,  right.dx / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_Y, -right.dy / 32768.0f);
     }
 
     if (mode & _GLFW_POLL_BUTTONS)
