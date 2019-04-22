@@ -24,8 +24,18 @@
 //
 //========================================================================
 
-#define _GLFW_PLATFORM_JOYSTICK_STATE         int nulljs
-#define _GLFW_PLATFORM_LIBRARY_JOYSTICK_STATE int nulljs
+#define _GLFW_PLATFORM_JOYSTICK_STATE         _GLFWjoystickNX nx
+#define _GLFW_PLATFORM_LIBRARY_JOYSTICK_STATE
 
-#define _GLFW_PLATFORM_MAPPING_NAME ""
+#define _GLFW_PLATFORM_MAPPING_NAME "Switch"
+
+// Switch-specific per-joystick data
+//
+typedef struct _GLFWjoystickNX
+{
+    HidControllerID id;
+} _GLFWjoystickNX;
+
+void _glfwInitSwitchJoysticks(void);
+void _glfwUpdateSwitchJoysticks(void);
 

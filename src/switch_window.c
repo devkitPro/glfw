@@ -316,6 +316,9 @@ void _glfwPlatformPollEvents(void)
         if (events & _GLFW_SWITCH_EVENT_SCREEN_SIZE_CHANGED)
             _glfwPlatformSetWindowSize(_glfw.nx.cur_window, _glfw.nx.scr_width, _glfw.nx.scr_height);
     } while (events);
+
+    // Update joysticks
+    _glfwUpdateSwitchJoysticks();
 }
 
 void _glfwPlatformWaitEvents(void)

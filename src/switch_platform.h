@@ -65,7 +65,6 @@
 
 // Switch-specific per-window data
 //
-
 typedef struct _GLFWwindowNX
 {
     NWindow* nwin;
