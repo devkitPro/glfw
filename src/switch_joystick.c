@@ -34,6 +34,9 @@
 #define _GLFW_JOYSTICK_BUTTON   2
 #define _GLFW_JOYSTICK_HATBIT   3
 
+#define TOUCH_WIDTH             1280
+#define TOUCH_HEIGHT            720
+
 enum
 {
     _SWITCH_AXIS_LEFT_X,
@@ -148,6 +151,23 @@ void _glfwUpdateSwitchJoysticks(void)
     MAP_KEY(KEY_Y, GLFW_KEY_A, KBD_A);
     MAP_KEY(KEY_PLUS, GLFW_KEY_ENTER, KBD_ENTER);
     MAP_KEY(KEY_MINUS, GLFW_KEY_ESCAPE, KBD_ESC);
+
+    // Report touch inputs as mouse clicks
+    if (hidTouchCount() > 0)
+    {
+        touchPosition touch;
+        hidTouchRead(&touch, 0);
+
+        double scaledXPos = (double)touch.px / TOUCH_WIDTH * _glfw.nx.scr_width;
+        double scaledYPos = (double)touch.py / TOUCH_HEIGHT * _glfw.nx.scr_height;
+
+        _glfwInputCursorPos(_glfw.nx.cur_window, scaledXPos, scaledYPos);
+
+        if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_RELEASE)
+            _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+
+    } else if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_PRESS)
+        _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////
