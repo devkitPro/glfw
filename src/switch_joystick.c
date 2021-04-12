@@ -116,9 +116,8 @@ void _glfwInitSwitchJoysticks(void)
 
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&pad);
-
+    
     js->mapping = &s_switchMapping;
-    padIsNpadActive (&pad, js->nx.id);
 }
 
 void _glfwUpdateSwitchJoysticks(void)
@@ -219,3 +218,8 @@ int _glfwPlatformPollJoystick(_GLFWjoystick* js, int mode)
     return GLFW_TRUE;
 }
 
+/* Not used on Switch
+void _glfwPlatformUpdateGamepadGUID(char* guid)
+{
+}
+*/
