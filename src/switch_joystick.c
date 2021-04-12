@@ -116,6 +116,7 @@ void _glfwInitSwitchJoysticks(void)
 
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&pad);
+    hidInitializeTouchScreen();
     
     js->mapping = &s_switchMapping;
 }
