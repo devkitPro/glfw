@@ -32,7 +32,7 @@ static AppletHookCookie s_glfwAppletHookCookie;
 
 static void _glfwSwitchRefreshFocusState(void)
 {
-    int is_focused = appletGetFocusState() == AppletFocusState_Focused ? GLFW_TRUE : GLFW_FALSE;
+    int is_focused = appletGetFocusState() == AppletFocusState_InFocus ? GLFW_TRUE : GLFW_FALSE;
     if (is_focused != _glfw.nx.is_focused)
     {
         _glfw.nx.event_mask |= _GLFW_SWITCH_EVENT_FOCUS_CHANGED;
@@ -50,7 +50,7 @@ static void _glfwSwitchRefreshScreenSize(void)
             _glfw.nx.scr_width = 1280;
             _glfw.nx.scr_height = 720;
             break;
-        case AppletOperationMode_Docked:
+        case AppletOperationMode_Console:
             _glfw.nx.scr_width = 1920;
             _glfw.nx.scr_height = 1080;
             break;

@@ -33,7 +33,6 @@
 //
 typedef struct _GLFWjoystickNX
 {
-    HidControllerID id;
 } _GLFWjoystickNX;
 
 void _glfwInitSwitchJoysticks(void);

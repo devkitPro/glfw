@@ -27,7 +27,7 @@
 #include "internal.h"
 
 // Built-in soft-reset combo that triggers a GLFW window close event
-#define SOFT_RESET_COMBO (KEY_PLUS|KEY_MINUS|KEY_L|KEY_R)
+#define SOFT_RESET_COMBO (HidNpadButton_Plus|HidNpadButton_Minus|HidNpadButton_L|HidNpadButton_R)
 
 // Internal constants for gamepad mapping source types
 #define _GLFW_JOYSTICK_AXIS     1
@@ -107,13 +107,18 @@ static _GLFWmapping s_switchMapping =
     },
 };
 
+PadState pad;
+
 void _glfwInitSwitchJoysticks(void)
 {
     _GLFWjoystick* js = _glfwAllocJoystick(s_switchMapping.name, s_switchMapping.guid,
         _SWITCH_AXIS_COUNT, _SWITCH_BUTTON_COUNT, _SWITCH_HAT_COUNT);
 
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
+    padInitializeDefault(&pad);
+    hidInitializeTouchScreen();
+    
     js->mapping = &s_switchMapping;
-    js->nx.id = CONTROLLER_P1_AUTO;
 }
 
 void _glfwUpdateSwitchJoysticks(void)
@@ -121,10 +126,10 @@ void _glfwUpdateSwitchJoysticks(void)
     u64 down, held, up;
 
     // Read input state
-    hidScanInput();
-    down = hidKeysDown(CONTROLLER_P1_AUTO);
-    held = hidKeysHeld(CONTROLLER_P1_AUTO);
-    up   = hidKeysUp  (CONTROLLER_P1_AUTO);
+    padUpdate(&pad);
+    down = padGetButtonsDown(&pad);
+    held = padGetButtons(&pad);
+    up   = padGetButtonsUp(&pad);
 
     // Check for soft-reset combo
     if ((held & SOFT_RESET_COMBO) == SOFT_RESET_COMBO)
@@ -141,33 +146,35 @@ void _glfwUpdateSwitchJoysticks(void)
 
     // Map common keyboard keys to the controller
     // TODO: Only do this mapping if a keyboard isn't connected
-    MAP_KEY(KEY_UP, GLFW_KEY_UP, KBD_UP);
-    MAP_KEY(KEY_DOWN, GLFW_KEY_DOWN, KBD_DOWN);
-    MAP_KEY(KEY_LEFT, GLFW_KEY_LEFT, KBD_LEFT);
-    MAP_KEY(KEY_RIGHT, GLFW_KEY_RIGHT, KBD_RIGHT);
-    MAP_KEY(KEY_A, GLFW_KEY_X, KBD_X);
-    MAP_KEY(KEY_B, GLFW_KEY_Z, KBD_Z);
-    MAP_KEY(KEY_X, GLFW_KEY_S, KBD_S);
-    MAP_KEY(KEY_Y, GLFW_KEY_A, KBD_A);
-    MAP_KEY(KEY_PLUS, GLFW_KEY_ENTER, KBD_ENTER);
-    MAP_KEY(KEY_MINUS, GLFW_KEY_ESCAPE, KBD_ESC);
+    MAP_KEY(HidNpadButton_Up, GLFW_KEY_UP, HidKeyboardKey_UpArrow);
+    MAP_KEY(HidNpadButton_Down, GLFW_KEY_DOWN, HidKeyboardKey_DownArrow);
+    MAP_KEY(HidNpadButton_Left, GLFW_KEY_LEFT, HidKeyboardKey_LeftArrow);
+    MAP_KEY(HidNpadButton_Right, GLFW_KEY_RIGHT, HidKeyboardKey_RightArrow);
+    MAP_KEY(HidNpadButton_A, GLFW_KEY_X, HidKeyboardKey_X);
+    MAP_KEY(HidNpadButton_B, GLFW_KEY_Z, HidKeyboardKey_Z);
+    MAP_KEY(HidNpadButton_X, GLFW_KEY_S, HidKeyboardKey_S);
+    MAP_KEY(HidNpadButton_Y, GLFW_KEY_A, HidKeyboardKey_A);
+    MAP_KEY(HidNpadButton_Plus, GLFW_KEY_ENTER, HidKeyboardKey_Return);
+    MAP_KEY(HidNpadButton_Minus, GLFW_KEY_ESCAPE, HidKeyboardKey_Escape);
 
     // Report touch inputs as mouse clicks
-    if (hidTouchCount() > 0)
-    {
-        touchPosition touch;
-        hidTouchRead(&touch, 0);
+    HidTouchScreenState state={0};
+    if (hidGetTouchScreenStates(&state, 1)) {
+        if (state.count > 0)
+        {
 
-        double scaledXPos = (double)touch.px / TOUCH_WIDTH * _glfw.nx.scr_width;
-        double scaledYPos = (double)touch.py / TOUCH_HEIGHT * _glfw.nx.scr_height;
+            double scaledXPos = (double)state.touches[0].x / TOUCH_WIDTH * _glfw.nx.scr_width;
+            double scaledYPos = (double)state.touches[0].y / TOUCH_HEIGHT * _glfw.nx.scr_height;
 
-        _glfwInputCursorPos(_glfw.nx.cur_window, scaledXPos, scaledYPos);
+            _glfwInputCursorPos(_glfw.nx.cur_window, scaledXPos, scaledYPos);
 
-        if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_RELEASE)
-            _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+            if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_RELEASE)
+                _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
 
-    } else if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_PRESS)
-        _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, 0);
+        }
+        else if (_glfw.nx.cur_window->mouseButtons[GLFW_MOUSE_BUTTON_LEFT] == GLFW_PRESS)
+            _glfwInputMouseClick(_glfw.nx.cur_window, GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, 0);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -176,27 +183,27 @@ void _glfwUpdateSwitchJoysticks(void)
 
 int _glfwPlatformPollJoystick(_GLFWjoystick* js, int mode)
 {
-    // Detect presence - we assume CONTROLLER_P1_AUTO always exists
-    if (js->nx.id != CONTROLLER_P1_AUTO && !hidIsControllerConnected(js->nx.id))
+    // Detect presence
+    if (!padIsConnected(&pad))
         return GLFW_FALSE;
 
     if (mode & _GLFW_POLL_AXES)
     {
-        JoystickPosition left, right;
-        hidJoystickRead(&left,  js->nx.id, JOYSTICK_LEFT);
-        hidJoystickRead(&right, js->nx.id, JOYSTICK_RIGHT);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_X,   left.dx  / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_Y,  -left.dy  / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_X,  right.dx / 32768.0f);
-        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_Y, -right.dy / 32768.0f);
+        HidAnalogStickState left, right;
+        left = padGetStickPos(&pad, 0);
+        right = padGetStickPos(&pad, 1);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_X,   left.x  / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_LEFT_Y,  -left.y  / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_X,  right.x / 32768.0f);
+        _glfwInputJoystickAxis(js, _SWITCH_AXIS_RIGHT_Y, -right.y / 32768.0f);
     }
 
     if (mode & _GLFW_POLL_BUTTONS)
     {
         int i;
-        u64 keys = hidKeysHeld(js->nx.id);
-        keys |= ((keys >> 24) & 0x3) << _SWITCH_BUTTON_L; // Map KEY_SL/SR_LEFT  into KEY_L/R
-        keys |= ((keys >> 26) & 0x3) << _SWITCH_BUTTON_L; // Map KEY_SL/SR_RIGHT into KEY_L/R
+        u64 keys = padGetButtons(&pad);
+        keys |= ((keys >> 24) & 0x3) << _SWITCH_BUTTON_L; // Map KEY_SL/SR_LEFT  into HidNpadButton_L/R
+        keys |= ((keys >> 26) & 0x3) << _SWITCH_BUTTON_L; // Map KEY_SL/SR_RIGHT into HidNpadButton_L/R
         for (i = 0; i < _SWITCH_BUTTON_COUNT; i ++)
             _glfwInputJoystickButton(js, i, (keys & BIT(i)) ? GLFW_PRESS : GLFW_RELEASE);
         for (i = 0; i < _SWITCH_HAT_COUNT; i ++)
