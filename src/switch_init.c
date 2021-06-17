@@ -90,7 +90,8 @@ int _glfwPlatformInit(void)
     _glfwSwitchRefreshFocusState();
     _glfwSwitchRefreshScreenSize();
 
-    _glfwAllocMonitor("Default", 1920, 1080);
+    _GLFWmonitor* monitor = _glfwAllocMonitor("Default", 1920, 1080);
+    _glfwInputMonitor(monitor, GLFW_CONNECTED, _GLFW_INSERT_FIRST);
     _glfwInitSwitchJoysticks();
     return GLFW_TRUE;
 }
