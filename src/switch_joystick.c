@@ -119,6 +119,9 @@ void _glfwInitSwitchJoysticks(void)
     hidInitializeTouchScreen();
     
     js->mapping = &s_switchMapping;
+
+    padUpdate(&pad);
+    _glfwInputJoystick(js, GLFW_CONNECTED);
 }
 
 void _glfwUpdateSwitchJoysticks(void)
